@@ -2024,10 +2024,9 @@ canvas {
 
     #markers-panel, #trajectories-panel, #analog-panel,
     #metadata-panel, .vectors-panel {
-        width: calc(100vw - 40px);
         left: 20px;
         top: 160px;
-        max-height: calc(100vh - 240px);
+        max-height: calc(100vh - 300px);
     }
 
     #controls-container {
