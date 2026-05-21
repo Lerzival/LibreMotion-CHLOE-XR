@@ -367,3 +367,43 @@ export function updateVectorPlotLine(currentTime) {
         }
     });
 }
+
+/**
+ * Refreshes all active Plotly charts when the theme changes.
+ * Updates text colors, background colors, and grid colors based on light/dark mode.
+ * Called from main.js when enableLightMode() or enableDarkMode() is triggered.
+ */
+export function refreshAllPlots() {
+    const isLightMode = document.body.classList.contains('light-mode');
+    const textColor = isLightMode ? '#333' : '#fff';
+    const gridColor = isLightMode ? '#ddd' : '#444';
+    
+    // Refresh analog plots - find all plots by their IDs in the DOM
+    if (isAnalogPlotsOpen && selectedChannels.length > 0) {
+        selectedChannels.forEach(channel => {
+            const sId = sanitizeId(channel);
+            const graphDiv = document.getElementById(`plot-${sId}`);
+            if (graphDiv && graphDiv.layout) {
+                Plotly.relayout(graphDiv, {
+                    'font.color': textColor,
+                    'xaxis.gridcolor': gridColor,
+                    'yaxis.gridcolor': gridColor
+                });
+            }
+        });
+    }
+    
+    // Refresh vector plots
+    if (isVectorPanelOpen && Object.keys(activeVectors).length > 0) {
+        Object.keys(activeVectors).forEach(id => {
+            const graphDiv = document.getElementById(`plot-${id}`);
+            if (graphDiv && graphDiv.layout) {
+                Plotly.relayout(graphDiv, {
+                    'font.color': textColor,
+                    'xaxis.gridcolor': gridColor,
+                    'yaxis.gridcolor': gridColor
+                });
+            }
+        });
+    }
+}

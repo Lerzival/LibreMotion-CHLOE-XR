@@ -10,9 +10,9 @@ import * as THREE from "three";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { updateAvatarPose, setInfoArmRight, setInfoArmLeft} from './kinematics.js';
-import { openPlotsPanel, updatePlotlyTimeLine, isAnalogPlotsOpen, closePlotsPanel, createAnalogPlots, updateVectorPlotLine, setAnalogPlotsVisibility } from './plots.js';
+import { openPlotsPanel, updatePlotlyTimeLine, isAnalogPlotsOpen, closePlotsPanel, createAnalogPlots, updateVectorPlotLine, setAnalogPlotsVisibility, refreshAllPlots } from './plots.js';
 import { TRANSLATIONS, t, updateToggleText, updateTextContent, updateTitle, updateThemeButtons, updatePlotsTranslations, getMarkerAnatomicalName } from './i18n.js';
-import { MARKER_CATEGORIES, CONECTIONS, MARKERS_COLOURS, HAND_MARKERS_SET, HEAD_MARKERS, ANALOG_COLOURS} from './constants.js';
+import { MARKER_CATEGORIES, CONNECTIONS, MARKERS_COLOURS, HAND_MARKERS_SET, HEAD_MARKERS, ANALOG_COLOURS} from './constants.js';
 import { toggleTrajectory, clearAllTrajectories, trajectories, updateTrajectoriesPanel, initTrajectoryRangeControls, setupTrajectoryRangeControls} from './trajectories.js';
 import { addMarkerVector, updateVectors3D, isVectorPanelOpen, setVectorPanelState, clearAllVectors, activeVectors} from './vectors.js';
 
@@ -372,7 +372,7 @@ function setupSceneFromData(data) {
         scene.add(cabezaMarker);
 
         // Create lines between markers based on the CONNECTIONS map
-        CONECTIONS.forEach(([m1, m2]) => {
+        CONNECTIONS.forEach(([m1, m2]) => {
             if (markers[m1] && markers[m2]) {
                 const geometry = new THREE.BufferGeometry();
                 const positions = new Float32Array(6); // 2 points * 3 coordinates (x,y,z)
@@ -1151,7 +1151,7 @@ function enableDarkMode() {
     if (themeDarkBtn) themeDarkBtn.classList.add('active');
     if (themeLightBtn) themeLightBtn.classList.remove('active');
     
-    if (ambientLight) ambientLight.intensity = 0.6;
+    if (ambientLight) ambientLight.intensity = 1.0;
 
     if (scene) scene.background = new THREE.Color(0x1a1a1a);
     
@@ -1160,6 +1160,9 @@ function enableDarkMode() {
         scene.userData.materials.line.color.setHex(0xffffff); 
         scene.userData.materials.line.needsUpdate = true;
     }
+
+    // Refresh all active plots with dark mode colors
+    refreshAllPlots();
 
     console.log("Modo oscuro activado");
 
@@ -1178,7 +1181,7 @@ function enableLightMode() {
     if (themeDarkBtn) themeDarkBtn.classList.remove('active');
     if (themeLightBtn) themeLightBtn.classList.add('active');
     
-    if (ambientLight) ambientLight.intensity = 1.5;
+    if (ambientLight) ambientLight.intensity = 2.0;
 
     if (scene) scene.background = new THREE.Color(0xf5f5f5);
     
@@ -1187,6 +1190,9 @@ function enableLightMode() {
         scene.userData.materials.line.color.setHex(0x333333); 
         scene.userData.materials.line.needsUpdate = true;
     }
+    
+    // Refresh all active plots with light mode colors
+    refreshAllPlots();
     
     console.log("Modo claro activado");
 }

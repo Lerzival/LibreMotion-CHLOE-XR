@@ -25,6 +25,8 @@
 }
 
 body.light-mode {
+    background-color: #f5f5f5;
+    color: #333;
     --panel-bg: #f5f5f5;
     --header-bg: rgba(255, 255, 255, 0.9);
     --card-bg: rgba(255, 255, 255, 0.7);
@@ -626,6 +628,9 @@ body.light-mode .tool-btn {
 body.light-mode .tool-btn:hover {
     background: rgba(0, 0, 0, 0.15);
     color: #000;
+}
+body.light-mode #left-panel {
+    background-color: #ffffff;
 }
 
 /* 2. BASE STYLES & LAYOUT 
@@ -1776,6 +1781,11 @@ canvas {
 
 /* 6. PLOTTING MODULE 
    -------------------------------------------------------------------------- */
+#left-panel {
+    background-color: #1a1a1a;
+    transition: background-color 0.3s ease;
+}
+
 .main-wrapper.with-plots #left-panel {
     width: 50%;
     flex-shrink: 0;
@@ -2003,58 +2013,66 @@ canvas {
 
 /* Tablets & Large Phones (max-width: 768px) */
 @media (max-width: 768px) {
-    /* Stack panels vertically when plots are active */
+
     .main-wrapper.with-plots { flex-direction: column; }
-    .main-wrapper.with-plots #left-panel, 
-    .main-wrapper.with-plots #right-panel { 
-        width: 100%; 
-        height: 50%; 
+    .main-wrapper.with-plots #left-panel,
+    .main-wrapper.with-plots #right-panel {
+        width: 100%;
+        height: 50%;
     }
 
-    /* Standardized behavior for all floating data panels */
-    #markers-panel, #trajectories-panel, #analog-panel, 
+
+    #markers-panel, #trajectories-panel, #analog-panel,
     #metadata-panel, .vectors-panel {
         width: calc(100vw - 40px);
         left: 20px;
-        top: 100px; /* Aligned below header toggles */
-        max-height: 50vh;
+        top: 160px;
+        max-height: calc(100vh - 240px);
     }
 
-    /* Playback controls: Stack vertically to fit small widths */
     #controls-container {
         flex-direction: column;
         gap: 8px;
         bottom: 70px;
     }
-    
+
     .control-group, #frame-slider { width: 100%; justify-content: center; }
 
-    /* UI Toggle Adjustments */
+    .metadata-toggle {
+        top: 20px;
+        right: 20px;
+    }
+
+    .analog-toggle {
+        top: 65px;
+        right: 20px;
+    }
+
     .view-toggle {
-        top: 60px; 
+        top: 65px;
         left: 20px;
-        width: calc(100vw - 40px);
-    }
-    
-    .trajectories-toggle { 
-        bottom: 20px; 
-        left: 20px; 
-        width: calc(50% - 30px); /* Split bottom space */
-        text-align: center;
     }
 
-    .vectors-toggle { 
-        bottom: 20px; 
-        left: auto;
-        right: 20px; /* Move to bottom-right on mobile */
-        top: auto;   /* Reset the top: 60px we had before */
-        width: calc(50% - 30px);
-        text-align: center;
+    .trajectories-toggle {
+        bottom: 20px;
+        left: 20px;
+        right: auto;
+        top: auto;
+        width: auto;
+        text-align: left;
+        white-space: nowrap;
     }
-    .analog-toggle { right: 120px; }
-    
 
-    /* Marker list layout simplification */
+    .vectors-toggle {
+        bottom: 65px;  
+        left: 20px;
+        right: auto;
+        top: auto;
+        width: auto;
+        text-align: left;
+        white-space: nowrap;
+    }
+
     .marker-list { grid-template-columns: 1fr; }
     .marker-trajectory-btn { grid-column: 1; margin-top: 4px; justify-self: start; }
     .category-header { flex-wrap: wrap; }

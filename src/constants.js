@@ -19,7 +19,7 @@ export const ANALOG_COLOURS = {
 };
 
 // Used in main.js for marker connections
-export const CONECTIONS = [
+export const CONNECTIONS = [
     ['C7', 'CLAV'], ['CLAV', 'STRN'], ['STRN', 'T10'], ['C7', 'T10'], ['T10', 'SACR'], 
     ['CLAV', 'RASI'], ['CLAV', 'LASI'], ['C7', 'RPSI'], ['C7', 'LPSI'],
     ['STRN', 'RASI'], ['STRN', 'LASI'], ['T10', 'RPSI'], ['T10', 'LPSI'],
