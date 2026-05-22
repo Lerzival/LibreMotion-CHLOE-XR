@@ -18,7 +18,6 @@ RUN mamba install -y -c conda-forge \
     numpy \
     flask \
     gunicorn \
-    python-dotenv \
     && mamba clean -afy
 
 COPY app.py .
@@ -27,9 +26,4 @@ COPY --from=builder /app/dist ./dist/
 
 EXPOSE 8080
 
-ENV FLASK_PORT=8080
-# 4 workers for better concurrency, fulfilling the requirement NFR5 (Concurrency)
-ENV FLASK_WORKERS=4 
-# Increased timeout to prevent WORKER TIMEOUT during heavy C3D processing
-ENV FLASK_TIMEOUT=120
 CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:$FLASK_PORT --workers $FLASK_WORKERS --timeout $FLASK_TIMEOUT app:app"]
