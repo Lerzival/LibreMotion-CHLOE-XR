@@ -34,10 +34,10 @@ To run the application locally, clone the repository and execute the following c
 
 ```bash
 # Build the image
-docker build -t chloe-visualizer .
+docker build -t chloe .
 
 # Run the container
-docker run -p 8080:8080 chloe-visualizer
+docker run -d -p 8080:8080 --env-file .env chloe
 ```
 
 The application will be available at http://localhost:8080.
