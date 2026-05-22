@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 COPY . .
 RUN npx vite build
 
@@ -18,14 +18,8 @@ RUN mamba install -y -c conda-forge \
     numpy \
     flask \
     gunicorn \
+    python-dotenv \
     && mamba clean -afy
-
-
-COPY requirements.txt .
-
-RUN sed -i '/ezc3d/d' requirements.txt && \
-    sed -i '/numpy/d' requirements.txt && \
-    pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 COPY processor.py .
