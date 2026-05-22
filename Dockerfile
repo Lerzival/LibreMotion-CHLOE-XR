@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 RUN npx vite build
 
@@ -34,7 +34,7 @@ COPY --from=builder /app/dist ./dist/
 EXPOSE 8080
 
 ENV FLASK_PORT=8080
-# 4 workers for better concurrency, fulfilling the requirement NFR5 (Scalability)
+# 4 workers for better concurrency, fulfilling the requirement NFR5 (Concurrency)
 ENV FLASK_WORKERS=4 
 # Increased timeout to prevent WORKER TIMEOUT during heavy C3D processing
 ENV FLASK_TIMEOUT=120
