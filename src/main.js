@@ -15,7 +15,10 @@ import { TRANSLATIONS, t, updateToggleText, updateTextContent, updateTitle, upda
 import { MARKER_CATEGORIES, CONNECTIONS, MARKERS_COLOURS, HAND_MARKERS_SET, HEAD_MARKERS, ANALOG_COLOURS} from './constants.js';
 import { toggleTrajectory, clearAllTrajectories, trajectories, updateTrajectoriesPanel, initTrajectoryRangeControls, setupTrajectoryRangeControls} from './trajectories.js';
 import { addMarkerVector, updateVectors3D, isVectorPanelOpen, setVectorPanelState, clearAllVectors, activeVectors} from './vectors.js';
-
+import { configurarManos } from "./manos.js";
+import { interaction } from "./controller.js";
+import { handleXRHitTest } from "./hitTest.js";
+import { ARButton } from "three/examples/jsm/Addons.js";
 
 // ======================================================================================
 // Global variables
@@ -56,6 +59,7 @@ let frameAccumulator = 0;
 let lastTime = 0;
 let currentFileName = '';
 let skeletonHelper = null;
+let avatarColocado = false;
 
 // ======================================================================================
 // DOM references for UI control
@@ -201,10 +205,6 @@ function init() {
         const isLightMode = document.body.classList.contains('light-mode');
         scene.background = new THREE.Color(isLightMode ? 0xf5f5f5 : 0x1a1a1a);
 
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(2, 1.5, 2);
-        camera.lookAt(0, 1, 0);
-
         // Connects Three.js to the HTML Canvas defined in the DOM
         const canvas = document.getElementById('scene-canvas');
         if (!canvas) {
@@ -217,14 +217,77 @@ function init() {
             alpha: true,
             canvas: canvas  
         });
+
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+        renderer.xr.enabled = true; // Added XR support
 
+        const xr_button = ARButton.createButton(renderer,{
+            requiredFeatures: ["hit-test", "dom-overlay"],
+            domOverlay: {root: document.body},
+            optionalFeatures: ["hand-tracking"]
+        })
+
+        Object.assign(xr_button.style, {
+            top: "22px",
+            left: "320px",
+            right: "auto",
+            height: "13px"
+        });
+
+        xr_button.id = "boton_webxr"
+        
+        document.body.appendChild(xr_button);
+        
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
+        camera.position.set(2, 1.5, 2);
+        camera.lookAt(0, 1, 0);
         controls = new OrbitControls(camera, renderer.domElement); //Enables user to rotate and zoom around the model
         controls.target.set(0, 1, 0);
         controls.enableDamping = true; //Smoother rotation movement
         controls.dampingFactor = 0.05;
+       
+        const planeMarkerMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+          
+        const planeMarkerGeometry = new THREE.RingGeometry(0.14, 0.15, 16).rotateX(
+            -Math.PI / 2,
+        );
+        
+        const planeMarker = new THREE.Mesh(planeMarkerGeometry, planeMarkerMaterial);
+        
+        planeMarker.matrixAutoUpdate = false;
+        planeMarker.visible = false; //lo escondes para que no sea visible todo el rato. Luego debes cambiar cosas en animate para hacer el hittest y esas cosas, ahí lo haces visible
+        scene.add(planeMarker);
+
+        const controller1 = renderer.xr.getController(1);
+        const controller2 = renderer.xr.getController(0);
+        scene.add(controller1, controller2);
+        controller1.addEventListener('select', () => {
+        if (planeMarker.visible && !avatarColocado && avatar != null) {
+            avatar.position.setFromMatrixPosition(planeMarker.matrix); //TODO: modelo es placeholder
+            // Calcula la altura real del objeto con una caja para apoyarlo bien
+            const caja = new THREE.Box3().setFromObject(avatar);
+            avatar.position.y += (caja.max.y - caja.min.y) / 2;
+        
+            avatar.visible = true;
+            planeMarker.visible = false;
+            avatarColocado = true;
+        }
+        });
+
+        controller2.addEventListener('select', () => {
+        if (planeMarker.visible && !modeloColocado) {
+            modelo.position.setFromMatrixPosition(planeMarker.matrix); //TODO: modelo es placeholder
+            // Calcula la altura real del objeto con una caja para apoyarlo bien
+            const caja = new THREE.Box3().setFromObject(cubo);
+            modelo.position.y += (caja.max.y - caja.min.y) / 2;
+        
+            modelo.visible = true;
+            planeMarker.visible = false;
+            modeloColocado = true;
+        }
+        })
 
         ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
         scene.add(ambientLight); 
@@ -247,7 +310,7 @@ function init() {
         };
         
         loadAvatar(); 
-        animate();
+        renderer.setAnimationLoop(animate);
         changeLanguage('es'); // Initial language is Spanish, can be changed by user
         initThemeToggle();
         initTrajectoryRangeControls();
@@ -1208,7 +1271,7 @@ function enableLightMode() {
  * @param {number} currentTime - Timestamp provided by requestAnimationFrame.
  */
 function animate(currentTime = 0) {
-    requestAnimationFrame(animate);
+    //requestAnimationFrame(animate); Eliminada por la transición a WebXR y la utilización de setAnimationLoop
     if (controls) controls.update();
     
     // Calculate time elapsed since last frame

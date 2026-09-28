@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CHLOE: Clinical Helper for Locomotion Objective Evaluation</title>
+  <script type="module" crossorigin src="/assets/index-DgrNewOh.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-Zwpv0y8r.css">
+</head>
+<body>
+
+    <div class="main-wrapper" id="main-wrapper">
+        
+        <div id="left-panel">
+            <canvas id="scene-canvas"></canvas>
+
+            <div class="language-selector">
+                <button onclick="changeLanguage('es')" class="lang-btn active">ES</button>
+                <button onclick="changeLanguage('en')" class="lang-btn">EN</button>
+                <button onclick="changeLanguage('fr')" class="lang-btn">FR</button>
+            </div>
+            <div class="camera-tools"> 
+                <button id="btn-reset-view" title="Resetear Vista" class="view-btn">🔄</button>
+            </div>
+
+            <div class="theme-toggle">
+                <button id="theme-dark" class="theme-btn active">
+                    <i>🌙</i> Oscuro
+                </button>
+                <button id="theme-light" class="theme-btn">
+                    <i>☀️</i> Claro
+                </button>
+            </div>
+
+
+            <div id="uploader-container">
+                <label for="c3d-upload" class="upload-label" id="upload-label-text">Seleccionar Archivo .c3d</label>
+                <input type="file" id="c3d-upload" accept=".c3d" />
+                <div id="status-message" aria-live="polite">Selecciona un archivo para comenzar</div>
+            </div>
+
+            <button id="panel-toggle" class="panel-toggle">📋 Marcadores</button>
+
+            <button id="analog-toggle" class="analog-toggle">📊 Datos Analógicos</button>
+            <button id="metadata-toggle" class="metadata-toggle">📈 Metadatos</button>
+            <button id="vectors-toggle" class="vectors-toggle">📏 Vectores</button>
+
+            <button id="trajectories-toggle" class="trajectories-toggle">🔄 Trayectorias</button>
+            <button id="view-mode-toggle" class="view-toggle">👤 Avatar</button>
+
+            <div id="markers-panel">
+                <h3 id="markers-title">Control de Marcadores</h3>
+                <div id="markers-categories">
+                    </div>
+            </div>
+
+            <div id="trajectories-panel">
+                <div class="panel-header">
+                    <span id="trajectories-title">📐 Trayectorias</span>
+                </div>
+                <div class="panel-content">
+                    <div class="trajectory-range-controls">
+                        <div class="range-header">
+                            <span id="trajectory-range-title">Rango de visualización</span>
+                            <button id="reset-trajectory-range" class="small-btn" title="Resetear al rango completo">↺</button>
+                        </div>
+                        <div class="range-slider-container">
+                            <label id="trajectory-range-start-label" class="range-label">Frame 0</label>
+                            <input type="range" id="trajectory-range-start" class="range-slider" min="0" max="100" value="0" disabled>
+                        </div>
+                        <div class="range-slider-container">
+                            <label id="trajectory-range-end-label" class="range-label">Frame 100</label>
+                            <input type="range" id="trajectory-range-end" class="range-slider" min="0" max="100" value="100" disabled>
+                        </div>
+                    </div>
+                    
+                    <div class="trajectories-header">
+                        <span id="trajectories-active">Trayectorias Activas</span>
+                        <button id="clear-trajectories" class="clear-btn" title="Limpiar todas las trayectorias">🗑️</button>
+                    </div>
+                    <div id="trajectories-list" class="trajectories-list"></div>
+                </div>
+            </div>
+
+            <div id="analog-panel">
+                <h3 id="analog-title">Datos Analógicos</h3>
+                <div id="analog-content">
+                    </div>
+            </div>
+
+            <div id="metadata-panel">
+                <h3 id="metadata-title">Información del Archivo</h3>
+                <div id="metadata-content">
+                    </div>
+            </div>
+
+            <div id="vectors-panel" class="vectors-panel">
+                <div class="panel-header">
+                    <h3 id="vectors-title">Vectores</h3>
+                </div>
+                <div id="vectors-panel-content">
+                    </div>
+            </div>
+
+            
+            <div id="controls-container">
+                <div class="control-group">
+                    <button id="btn-reset" title="Reiniciar">⏮</button>
+                    <button id="btn-play-pause" title="Reproducir/Pausar">▶️</button>
+                    <button id="btn-prev-frame" title="Frame Anterior" class="frame-btn">⏪</button>
+                    <button id="btn-next-frame" title="Frame Siguiente" class="frame-btn">⏩</button>
+                </div>
+                
+                <div class="control-group">
+                    <span class="control-label" id="lbl-frame">Frame:</span>
+                    <input type="range" id="frame-slider" value="0" min="0" max="100" disabled />
+                    <span id="frame-counter">0 / 0</span>
+                </div>
+                
+                <div class="control-group">
+                    <span class="control-label" id="lbl-speed">Velocidad:</span>
+                    <div class="speed-controls">
+                        <button class="speed-btn" data-speed="0.25" title="0.25x">x0.25</button>
+                        <button class="speed-btn" data-speed="0.5" title="0.5x">x0.5</button>
+                        <button class="speed-btn active" data-speed="1" title="Velocidad normal">x1</button>
+                        <button class="speed-btn" data-speed="1.5" title="1.5x">x1.5</button>
+                        <button class="speed-btn" data-speed="2" title="2x">x2</button>
+                        <button class="speed-btn" data-speed="5" title="5x">x5</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <span class="control-label" id="lbl-fps">FPS:</span>
+                    <span id="fps-display" class="fps-display">-</span>
+                </div>
+                
+                <div class="control-group">
+                    <span class="control-label" id="lbl-original">Tasa Original:</span>
+                    <span id="original-fps" class="fps-display">-</span>
+                </div>
+            </div> 
+        </div> 
+        <disv id="right-panel" class="plots-panel" style="display: none;">
+            <div class="plots-header">
+                <h3 id="plots-title">Gráficas Analógicas</h3>
+                <div class="plot-controls">
+                    <button id="close-plots" class="plot-btn close-btn" title="Cerrar gráficas">✕</button>
+                </div>
+            </div>
+            <div id="plots-container" class="plots-content">
+                <div class="channel-selector-section" style="display: none;">
+                    <div class="selector-header">
+                        <span id="plots-count">0 canales seleccionados</span>
+                    </div>
+                    <div id="channels-checkboxes" class="channels-list"></div>
+                    <button id="apply-channels" class="plots-btn">Aplicar Selección</button>
+                </div>
+                <div id="graphs-section"></div>
+            </div>
+        </div>
+        
+    </div>
+
+
+</body>
+</html>
