@@ -1,0 +1,12 @@
+services:
+  chloe-server:
+    build: 
+      context: . #cogemos el dockerfile que ya hay
+    container_name: chloe_backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - ./dist:/server/dist #para el watch de vite
+      - ./datos_c3d:/server/datos_c3d #PARA LA SELECCION DE ARCHIVOS C3D DESDE LAS GAFAS

@@ -33,14 +33,14 @@ The core logic of CHLOE is based on an exhaustive empirical study of the officia
 To run the application locally, clone the repository and execute the following commands in your terminal:
 
 ```bash
-# Build the image
-docker build -t chloe .
+# Run de docker-compose file, which automatically builds the image and mounts the required folders to the container, and then runs it.
+docker-compose up -d --build
 
-# Run the container
-docker run -d -p 8080:8080 --env-file .env chloe
+# Open the localtunnel and watch for any changes made to the project (additional c3d file uploads) to update the container to include them
+npm run dev
 ```
 
-The application will be available at http://localhost:8080.
+The application will be available at https://chloe-xr-webapp.loca.lt.
 
 ### Author
 Belén Gómez Martínez – Biomedical Engineering, ETSIT, Universidad Politécnica de Madrid (UPM).
