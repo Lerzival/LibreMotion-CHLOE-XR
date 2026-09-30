@@ -33,7 +33,7 @@ The core logic of CHLOE is based on an exhaustive empirical study of the officia
 To run the application locally, clone the repository and execute the following commands in your terminal:
 
 ```bash
-# Run de docker-compose file, which automatically builds the image and mounts the required folders to the container, and then runs it.
+# Run the docker-compose file, which automatically builds the image and mounts the required folders to the container before running it.
 docker-compose up -d --build
 
 # Open the localtunnel and watch for any changes made to the project (additional c3d file uploads) to update the container to include them
