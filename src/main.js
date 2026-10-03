@@ -60,6 +60,7 @@ let lastTime = 0;
 let currentFileName = '';
 let skeletonHelper = null;
 let avatarColocado = false;
+let xr_button = null;
 
 // ======================================================================================
 // DOM references for UI control
@@ -223,20 +224,13 @@ function init() {
 
         renderer.xr.enabled = true; // Added XR support
 
-        const xr_button = ARButton.createButton(renderer,{
+        xr_button = ARButton.createButton(renderer,{
             requiredFeatures: ["hit-test", "dom-overlay"],
             domOverlay: {root: document.body},
             optionalFeatures: ["hand-tracking"]
         })
 
-        Object.assign(xr_button.style, {
-            top: "22px",
-            left: "320px",
-            right: "auto",
-            height: "13px"
-        });
-
-        xr_button.id = "boton_webxr"
+        xr_button.className = "webxr"
         
         document.body.appendChild(xr_button);
         
@@ -467,7 +461,10 @@ function setupSceneFromData(data) {
     if (animationData.length > 1) {
         isPlaying = true; 
         if (btnPlayPause) btnPlayPause.textContent = '⏸'; 
-        if (controlsContainer) controlsContainer.style.display = 'flex'; 
+        if (controlsContainer){
+        controlsContainer.style.display = 'flex';
+            if (xr_button) xr_button.style.bottom = '160px'; //sube si hay controles
+        }
         if (frameSlider) { frameSlider.max = animationData.length - 1; frameSlider.disabled = false; }
         
         updateFPSDisplays();
@@ -475,6 +472,7 @@ function setupSceneFromData(data) {
         updateSceneToFrame(0); // Display the first frame immediately
     } else {
         isPlaying = false;
+        if (xr_button) xr_button.style.bottom = '30px'; //baja si no hay controles
         if (controlsContainer) controlsContainer.style.display = 'none';
     }
 }
@@ -517,6 +515,7 @@ function clearScene() {
         if(el) el.style.display = 'none';
     });
     
+    if (xr_button) xr_button.style.bottom = '20px'; // bajar boton xr
     if (btnPlayPause) btnPlayPause.textContent = '▶️';
     if (frameSlider) { frameSlider.value = 0; frameSlider.disabled = true; }
     if (frameCounter) frameCounter.textContent = '0 / 0';
