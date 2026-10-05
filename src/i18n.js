@@ -4,12 +4,12 @@ export const TRANSLATIONS = {
     es: {
         app: {
             title: "CHLOE: Ayudante Clínico para Evaluación Objetiva de la Locomoción",
-            select_file: "Seleccionar Archivo .c3d",
+            select_file: "Cargar Archivo .c3d",
             processing: "Procesando archivo C3D...",
             success: "Archivo procesado! {{frames}} frames - {{fps}}Hz",
             success_analog_only: "Archivo procesado! No se encontraron frames, pero sí datos analógicos.",
             error: "Error: {{message}}",
-            select_file_prompt: "Selecciona un archivo .c3d para comenzar"
+            select_file_prompt: "Selecciona un archivo para comenzar"
         },
         markers: {
             control: "Control de Marcadores",
@@ -223,12 +223,12 @@ export const TRANSLATIONS = {
     en: {
         app: {
             title: "CHLOE: Clinical Helper for Locomotion Objective Evaluation",
-            select_file: "Select .c3d File",
+            select_file: "Load .c3d File",
             processing: "Processing C3D file...",
             success: "File processed! {{frames}} frames @ {{fps}}Hz",
             success_analog_only: "File processed! No frames found, but analog data is available.",
             error: "Error: {{message}}",
-            select_file_prompt: "Select a .c3d file to start"
+            select_file_prompt: "Select a file to start"
         },
         markers: {
             control: "Marker Control",
@@ -443,12 +443,12 @@ export const TRANSLATIONS = {
     fr: {
         app: {
             title: "CHLOE : Assistant Clinique pour l'Évaluation Objective de la Locomotion",
-            select_file: "Sélectionner un fichier .c3d",
+            select_file: "Charger un fichier .c3d",
             processing: "Traitement du fichier C3D...",
             success: "Fichier traité ! {{frames}} trames @ {{fps}}Hz",
             success_analog_only: "Fichier traité ! Aucune trame trouvée, mais des données analogiques sont disponibles.",
             error: "Erreur : {{message}}",
-            select_file_prompt: "Sélectionnez un fichier .c3d pour commencer"
+            select_file_prompt: "Sélectionnez un fichier pour commencer"
         },
         markers: {
             control: "Contrôle des Marqueurs",

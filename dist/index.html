@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CHLOE: Clinical Helper for Locomotion Objective Evaluation</title>
-  <script type="module" crossorigin src="/assets/index-CoCq3VUN.js"></script>
+  <script type="module" crossorigin src="/assets/index-CogdAOdm.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-Zwpv0y8r.css">
 </head>
 <body>
@@ -34,8 +34,12 @@
 
 
             <div id="uploader-container">
-                <label for="c3d-upload" class="upload-label" id="upload-label-text">Seleccionar Archivo .c3d</label>
-                <input type="file" id="c3d-upload" accept=".c3d" />
+                <select id="c3d-file-list" class="file-list"></select>
+    
+                <button class="upload-label" id="upload-label-text" style="border: none; cursor: pointer;">
+                    Cargar Archivo .c3d
+                </button>
+    
                 <div id="status-message" aria-live="polite">Selecciona un archivo para comenzar</div>
             </div>
 

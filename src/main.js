@@ -61,6 +61,7 @@ let currentFileName = '';
 let skeletonHelper = null;
 let avatarColocado = false;
 let xr_button = null;
+let isProcessing = false;
 
 // ======================================================================================
 // DOM references for UI control
@@ -333,25 +334,56 @@ function setStatus(text, type = 'info') {
 // DATA PROCESSING 
 // ============================================================================================================================================
 
+async function loadC3DFileList() {
+    //localiza el menú desplegable en el HTML
+    const select = document.getElementById('c3d-file-list');
+
+    try {
+        // pide a Python la lista de archivos (usamos la ruta GET)
+        const respuesta = await fetch('/c3d_file_list', { cache: 'no-store' }); // Evita cachear la respuesta para siempre obtener la lista actualizada
+        const data = await respuesta.json(); // Python nos devuelve algo como { files: ["a.c3d", "b.c3d"] }
+        
+        // El atributo 'hidden' hace que no aparezca en la lista al desplegar
+        select.innerHTML = '<option value="" disabled selected hidden>Selecciona un archivo</option>';
+        
+        // por cada archivo que nos mande Python se crea un seleccionable
+        data.files.forEach(archivo => {
+            const opcion = document.createElement('option');
+            opcion.value = archivo;          // Lo que se enviará al servidor
+            opcion.textContent = archivo;    // Lo que lee el usuario en la pantalla
+            select.appendChild(opcion);      
+        });
+
+    } catch (error) {
+        console.error("Error al cargar la lista:", error);
+        select.innerHTML = '<option value="">Error al conectar con el servidor</option>';
+    }
+}
+
 /**
  * Handles the C3D file upload process.
  * Sends the file to the Python backend via a POST request and processes the JSON response.
- * @param {File} file - The C3D file object from the input field or drag-and-drop event.
+ * @param {string} filename - The name of the C3D file to process.
  */
-async function handleFileUpload(file) {
-    if (!file) return;
+async function handleFileSelect(filename) {
+    if (isProcessing) {
+        console.warn("Ya se está procesando un archivo. Por favor espera.");
+        return;
+    }
 
+    if (!filename) return;
+
+    isProcessing = true;
     clearScene(); 
     setStatus(t('app.processing'), 'loading');
-    currentFileName = file.name;
+    currentFileName = filename;
 
-    //Use FormData to send the binary file to the server
-    const formData = new FormData();
-    formData.append('c3d_file', file);
+    //Package the filename into JSON
+    const paquete = JSON.stringify({ filename: filename });
 
     try {
-        //Asynchronous call to the '/upload_c3d' endpoint
-        const response = await fetch('/upload_c3d', { method: 'POST', body: formData });
+        //Asynchronous call to the '/process_c3d' endpoint
+        const response = await fetch('/process_c3d', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: paquete });
         
         if (!response.ok) {
             // Attempt to extract specific error messages sent by the Python server
@@ -463,7 +495,7 @@ function setupSceneFromData(data) {
         if (btnPlayPause) btnPlayPause.textContent = '⏸'; 
         if (controlsContainer){
         controlsContainer.style.display = 'flex';
-            if (xr_button) xr_button.style.bottom = '160px'; //sube si hay controles
+            if (xr_button) xr_button.style.bottom = '145px'; //sube si hay controles
         }
         if (frameSlider) { frameSlider.max = animationData.length - 1; frameSlider.disabled = false; }
         
@@ -515,7 +547,7 @@ function clearScene() {
         if(el) el.style.display = 'none';
     });
     
-    if (xr_button) xr_button.style.bottom = '20px'; // bajar boton xr
+    if (xr_button) xr_button.style.bottom = '30px'; // bajar boton xr
     if (btnPlayPause) btnPlayPause.textContent = '▶️';
     if (frameSlider) { frameSlider.value = 0; frameSlider.disabled = true; }
     if (frameCounter) frameCounter.textContent = '0 / 0';
@@ -1510,17 +1542,21 @@ plotsButton.addEventListener('click', () => {
     openPlotsPanel(analogData, () => lastLoadedData);
 });
 
-
-// Event Listeners for uploading c3d files via Drag & Drop or File Input    
-document.addEventListener('dragover', (e) => { e.preventDefault(); document.body.style.backgroundColor = 'rgba(0, 123, 255, 0.1)'; });
-document.addEventListener('dragleave', (e) => { e.preventDefault(); document.body.style.backgroundColor = ''; });
-document.addEventListener('drop', (e) => {
-    e.preventDefault(); document.body.style.backgroundColor = '';
-    const files = e.dataTransfer.files;
-    if (files.length > 0 && files[0].name.endsWith('.c3d')) handleFileUpload(files[0]);
-});
-
-if (uploadInput) uploadInput.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
+const botonAzul = document.getElementById('upload-label-text');
+// File select logic, replacing previous drag n drop functionality due to new framework 
+// constraints. Now users must select a file from the dropdown list and click "Cargar Archivo".
+if (botonAzul) {
+    botonAzul.addEventListener('click', () => {
+        const selectEl = document.getElementById('c3d-file-list');
+        const archivoElegido = selectEl.value;
+    
+        if (archivoElegido) {
+            handleFileSelect(archivoElegido); 
+        } else {
+            setStatus("Por favor, selecciona un archivo de la lista", "error");
+        }
+    });
+}
 
 window.openPlotsPanel = openPlotsPanel;
 window.closePlotsPanel = closePlotsPanel;
@@ -1528,3 +1564,4 @@ window.closePlotsPanel = closePlotsPanel;
 
 console.log("Iniciando aplicación...");
 init();
+loadC3DFileList();

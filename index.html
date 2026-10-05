@@ -33,8 +33,12 @@
 
 
             <div id="uploader-container">
-                <label for="c3d-upload" class="upload-label" id="upload-label-text">Seleccionar Archivo .c3d</label>
-                <input type="file" id="c3d-upload" accept=".c3d" />
+                <select id="c3d-file-list" class="file-list"></select>
+    
+                <button class="upload-label" id="upload-label-text" style="border: none; cursor: pointer;">
+                    Cargar Archivo .c3d
+                </button>
+    
                 <div id="status-message" aria-live="polite">Selecciona un archivo para comenzar</div>
             </div>
 
