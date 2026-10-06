@@ -7,7 +7,7 @@
     "build": "vite build",
     "watch": "vite build --watch",
     "tunnel": "npx localtunnel --port 8080 --subdomain chloe-xr-webapp",
-    "dev": "npx concurrently \"npm run watch\" \"npm run tunnel\""
+    "dev": "npx concurrently --names 'vite,tunnel' --prefix-colors 'cyan,yellow' --kill-others-on-fail \"npm run watch\" \"npm run tunnel\"" 
   },
   "keywords": [],
   "author": "",
