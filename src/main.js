@@ -226,8 +226,7 @@ function init() {
         renderer.xr.enabled = true; // Added XR support
 
         xr_button = ARButton.createButton(renderer,{
-            requiredFeatures: ["hit-test", "dom-overlay"],
-            domOverlay: {root: document.body},
+            requiredFeatures: ["hit-test"],
             optionalFeatures: ["hand-tracking"]
         })
 
