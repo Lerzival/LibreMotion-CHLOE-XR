@@ -16,7 +16,7 @@ import { MARKER_CATEGORIES, CONNECTIONS, MARKERS_COLOURS, HAND_MARKERS_SET, HEAD
 import { toggleTrajectory, clearAllTrajectories, trajectories, updateTrajectoriesPanel, initTrajectoryRangeControls, setupTrajectoryRangeControls} from './trajectories.js';
 import { addMarkerVector, updateVectors3D, isVectorPanelOpen, setVectorPanelState, clearAllVectors, activeVectors} from './vectors.js';
 import { configurarManos } from "./manos.js";
-import { interaction } from "./controller.js";
+import { interaction} from "./controller.js";
 import { handleXRHitTest } from "./hitTest.js";
 import { ARButton } from "three/examples/jsm/Addons.js";
 
@@ -47,6 +47,7 @@ export let avatarLoaded = false;
 export let isAvatarMode = false; // true = the avatar is shown, false = the lines are shown
 export let originalFPS = 0;
 export let avatarRestHipHeight = 0;
+export let modelGroup = new THREE.Group(); // Group to hold the avatar and any additional models
 
 let camera, renderer, controls, ambientLight;
 let markers = {}; 
@@ -62,6 +63,8 @@ let skeletonHelper = null;
 let avatarColocado = false;
 let xr_button = null;
 let isProcessing = false;
+let comprobarColisiones = null;
+let planeMarker;
 
 // ======================================================================================
 // DOM references for UI control
@@ -248,38 +251,50 @@ function init() {
             -Math.PI / 2,
         );
         
-        const planeMarker = new THREE.Mesh(planeMarkerGeometry, planeMarkerMaterial);
+        planeMarker = new THREE.Mesh(planeMarkerGeometry, planeMarkerMaterial);
         
         planeMarker.matrixAutoUpdate = false;
         planeMarker.visible = false; //lo escondes para que no sea visible todo el rato. Luego debes cambiar cosas en animate para hacer el hittest y esas cosas, ahí lo haces visible
         scene.add(planeMarker);
+
+        scene.add(modelGroup); 
+        modelGroup.visible = true;
+
+        const hitboxGeo = new THREE.BoxGeometry(1, 1, 1);
+        const hitboxMat = new THREE.MeshBasicMaterial({ 
+            
+            color: 0x0000ff, //DEBUG
+            transparent: true, 
+            opacity: 0.4, //DEBUG
+            depthWrite: false,
+            wireframe: true //DE MOMENTO PROVISIONAL PERO QUIZAS FUNCIONA
+        });
+        const hitbox = new THREE.Mesh(hitboxGeo, hitboxMat);
+        hitbox.name = 'hitbox'; // Le damos un nombre para encontrarlo rápido
+        modelGroup.add(hitbox);
+
+        comprobarColisiones = interaction(renderer, scene, modelGroup);
+
+        configurarManos(renderer, scene);
 
         const controller1 = renderer.xr.getController(1);
         const controller2 = renderer.xr.getController(0);
         scene.add(controller1, controller2);
         controller1.addEventListener('select', () => {
         if (planeMarker.visible && !avatarColocado && avatar != null) {
-            avatar.position.setFromMatrixPosition(planeMarker.matrix); //TODO: modelo es placeholder
-            // Calcula la altura real del objeto con una caja para apoyarlo bien
-            const caja = new THREE.Box3().setFromObject(avatar);
-            avatar.position.y += (caja.max.y - caja.min.y) / 2;
-        
-            avatar.visible = true;
+            modelGroup.position.setFromMatrixPosition(planeMarker.matrix); 
+            modelGroup.visible = true;
             planeMarker.visible = false;
             avatarColocado = true;
         }
         });
 
         controller2.addEventListener('select', () => {
-        if (planeMarker.visible && !modeloColocado) {
-            modelo.position.setFromMatrixPosition(planeMarker.matrix); //TODO: modelo es placeholder
-            // Calcula la altura real del objeto con una caja para apoyarlo bien
-            const caja = new THREE.Box3().setFromObject(cubo);
-            modelo.position.y += (caja.max.y - caja.min.y) / 2;
-        
-            modelo.visible = true;
+        if (planeMarker.visible && !avatarColocado) {
+            modelGroup.position.setFromMatrixPosition(planeMarker.matrix); 
+            modelGroup.visible = true;
             planeMarker.visible = false;
-            modeloColocado = true;
+            avatarColocado = true;
         }
         })
 
@@ -303,6 +318,34 @@ function init() {
             line: new THREE.LineBasicMaterial({ color: lineColor, linewidth: 1 })
         };
         
+        renderer.xr.addEventListener('sessionstart', () => {
+            // quitamos los orbit controls
+            controls.enabled = false;
+            //quitamos el fondo
+            scene.background = null;
+            // ocultamos el suelo virtual
+            if (gridHelper) gridHelper.visible = false;
+            
+        // Si aún no hemos colocado la figura físicamente en la sala, la ocultamos para que el hitTest obligue a buscar el suelo real.
+            if (!avatarColocado) modelGroup.visible = false;
+        });
+
+        renderer.xr.addEventListener('sessionend', () => {
+
+            if (gridHelper) gridHelper.visible = true; // Volvemos a poner la cuadrícula
+            controls.enabled = true; // Rehabilitamos los orbit controls
+
+            //vemos si estamos en modo claro y ajustamos el fondo accordingly
+            const isLightMode = document.body.classList.contains('light-mode');
+            scene.background = new THREE.Color(isLightMode ? 0xf5f5f5 : 0x1a1a1a);
+    
+            // Aseguramos que el modelo se vuelva a ver en la pantalla
+            modelGroup.visible = true;
+    
+            modelGroup.position.set(0, 0, 0);
+            avatarColocado = false; 
+        });
+
         loadAvatar(); 
         renderer.setAnimationLoop(animate);
         changeLanguage('es'); // Initial language is Spanish, can be changed by user
@@ -451,13 +494,13 @@ function setupSceneFromData(data) {
                 userVisible: true 
             };
             
-            scene.add(sphere);
+            modelGroup.add(sphere);
             markers[name] = sphere; // Store reference for later updates
         });
 
         // Add a larger semi-transparent sphere for the head area
         cabezaMarker = new THREE.Mesh(geometries.head, scene.userData.materials.cabeza);
-        scene.add(cabezaMarker);
+        modelGroup.add(cabezaMarker);
 
         // Create lines between markers based on the CONNECTIONS map
         CONNECTIONS.forEach(([m1, m2]) => {
@@ -467,7 +510,7 @@ function setupSceneFromData(data) {
                 geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
                 const line = new THREE.Line(geometry, scene.userData.materials.line);
                 line.userData = { m1: markers[m1], m2: markers[m2] };
-                scene.add(line);
+                modelGroup.add(line);
                 lines.push(line);
             }
         });
@@ -506,6 +549,25 @@ function setupSceneFromData(data) {
         if (xr_button) xr_button.style.bottom = '30px'; //baja si no hay controles
         if (controlsContainer) controlsContainer.style.display = 'none';
     }
+
+    //LOGICA DEL HITBOX
+
+    updateSceneToFrame(0); //posiciona el modelo en el frame 0 para que adquiera su forma real
+
+    const cajaVolumen = new THREE.Box3();
+    const centro = new THREE.Vector3();
+    const tamano = new THREE.Vector3();
+    cajaVolumen.setFromObject(modelGroup);
+    cajaVolumen.getCenter(centro);
+    cajaVolumen.getSize(tamano); //calcula el volumen total de todo lo que hay dentro del modelGroup
+
+    modelGroup.worldToLocal(centro); //convierte el centro global a coordenadas locales del modelGroup
+
+    const hitbox = modelGroup.getObjectByName('hitbox');
+    if (hitbox) {
+        hitbox.position.copy(centro);
+        hitbox.scale.copy(tamano).multiplyScalar(1.1); 
+    }
 }
 
 /**
@@ -514,9 +576,9 @@ function setupSceneFromData(data) {
  */
 function clearScene() {
     // Remove all marker meshes and skeletal lines from the scene
-    Object.values(markers).forEach(marker => scene.remove(marker));
-    lines.forEach(line => scene.remove(line));
-    if (cabezaMarker) { scene.remove(cabezaMarker); cabezaMarker = null; }
+    Object.values(markers).forEach(marker => modelGroup.remove(marker));
+    lines.forEach(line => modelGroup.remove(line));
+    if (cabezaMarker) { modelGroup.remove(cabezaMarker); cabezaMarker = null; }
     if (isAnalogPlotsOpen) {
         closePlotsPanel();
         setAnalogPlotsVisibility(false)
@@ -1131,7 +1193,7 @@ function loadAvatar() {
             }
         });
 
-        scene.add(avatar);
+        modelGroup.add(avatar);
         avatar.updateWorldMatrix(true, true);
         if (avatarBones.Hips) {
             const hipPos = new THREE.Vector3();
@@ -1300,9 +1362,9 @@ function enableLightMode() {
  * regardless of the screen's refresh rate.
  * @param {number} currentTime - Timestamp provided by requestAnimationFrame.
  */
-function animate(currentTime = 0) {
+function animate(currentTime = 0, frame) {
     //requestAnimationFrame(animate); Eliminada por la transición a WebXR y la utilización de setAnimationLoop
-    if (controls) controls.update();
+    if (controls && controls.enabled) controls.update();
     
     // Calculate time elapsed since last frame
     // 0.016s is the ideal frame duration for a 60Hz display, used as a fallback during the first execution cycle when 'lastTime' is not yet defined, ensuring 
@@ -1322,7 +1384,28 @@ function animate(currentTime = 0) {
             updateSceneToFrame(frameIndex);
         }
     }
+
+    if (renderer.xr.isPresenting && frame) {
+
+        if (!avatarColocado) {
+
+            handleXRHitTest(renderer,frame,
+                (hitMatrix) => {
+                    if(hitMatrix){
+                        planeMarker.visible = true;
+                        planeMarker.matrix.fromArray(hitMatrix);
+                    }
+                },
+                () => {
+                    planeMarker.visible = false;
+                }
+            );
+        }else{
+            if (comprobarColisiones) comprobarColisiones();
+        }
+    }
     if (renderer && scene && camera) renderer.render(scene, camera);
+    
 }
 
 /**
@@ -1357,7 +1440,7 @@ function updateSceneToFrame(index) {
         const center = new THREE.Vector3();
         let count = 0;
         HEAD_MARKERS.forEach(name => {
-            if (frame[name]) { center.add(new THREE.Vector3(...frame[name])); count++; }
+            if (frame[name] && !isNaN(frame[name][0])) { center.add(new THREE.Vector3(...frame[name])); count++; } //añadida la comprobación de NaN para evitar errores de datos corruptos
         });
 
         // Hide if avatar mode is on to avoid overlapping meshes

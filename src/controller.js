@@ -3,6 +3,9 @@ import * as THREE from "three";
 export function interaction(renderer, scene, objective){
     const raycaster = new THREE.Raycaster();
     const tempMatrix = new THREE.Matrix4();
+    const cajaAntes = new THREE.Box3(); 
+    const cajaDespues = new THREE.Box3();
+
     const propiedadesMandos = [];
     
     let mandos = [];
@@ -13,12 +16,13 @@ export function interaction(renderer, scene, objective){
     let anguloAnterior = 0;
     let distanciaActual = 0;
     let distanciaAnterior = 0;
-    // Un plano matemático infinito que mira hacia arriba (Eje Y) a la altura 0
-    const planoSuelo = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
     // Un vector vacío para guardar dónde choca el láser
     const puntoInterseccion = new THREE.Vector3();
     // Un vector para recordar dónde pinchaste exactamente relativo al centro del cubo
     const offsetAgarre = new THREE.Vector3();
+    
+    let distanciaAgarre = 0;
     
     let alturaFija = 0;
 
@@ -39,26 +43,24 @@ export function interaction(renderer, scene, objective){
         controller.add(laserFinal);
 
         controller.addEventListener("selectstart", () => {
-            // si el cubo aún no ha nacido, el láser no hace nada
-            if (!objective.visible) return; 
+            if (!objective.visible) return; // si el cubo aún no ha nacido, el láser no hace nada
 
             tempMatrix.identity().extractRotation(controller.matrixWorld); //logica de rotacion. Borras la tempmatrix con la identidad, le pones la rotacion del mando, haces que el rayo salga de una posicion matricial (del mando) y le das una direccion (0,0,-1) que es hacia delante, y la aplicas a la tempmatrix para que el rayo salga hacia delante del mando
             raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
             raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
 
-            const intersecciones = raycaster.intersectObject(objective, true);
+            const hitbox = objective.getObjectByName('hitbox');
+            const objetivoColision = hitbox ? hitbox : objective;
+            const intersecciones = raycaster.intersectObject(objetivoColision, false);
+
             if (intersecciones.length > 0) {
                     if (!mandos.includes(controller)) {
                         agarrado = objective;
                         mandos.push(controller);
                         if (mandos.length === 1) {
                             alturaFija = agarrado.position.y; //capturamos la altura del cubo en el momento de agarrarlo para que el plano de colisión esté a esa altura
-                            planoSuelo.constant = -alturaFija; // Movemos el plano de colisión a la altura del cubo. El - es porque constant representa la distancia desde el orígen al lado contrario al que mira el plano, asi que debes ponerlo en negativo para que el plano esté a la altura del cubo
-                            
-
-                            if (raycaster.ray.intersectPlane(planoSuelo, puntoInterseccion)) {
-                                offsetAgarre.subVectors(agarrado.position, puntoInterseccion);
-                            }
+                            distanciaAgarre = intersecciones[0].distance; //capturamos la distancia del rayo al cubo en el momento de agarrarlo para que el cubo no se mueva hacia la mano
+                            offsetAgarre.subVectors(agarrado.position, intersecciones[0].point); //capturamos el offset del punto de agarre para que el cubo no se mueva hacia la mano
                         } else if (mandos.length === 2) {
                     
                             mandos[0].getWorldPosition(vecMano1);
@@ -80,12 +82,14 @@ export function interaction(renderer, scene, objective){
                     tempMatrix.identity().extractRotation(mandos[0].matrixWorld);
                     raycaster.ray.origin.setFromMatrixPosition(mandos[0].matrixWorld);
                     raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-                    if (raycaster.ray.intersectPlane(planoSuelo, puntoInterseccion)) {
-                        offsetAgarre.subVectors(agarrado.position, puntoInterseccion); //aplico la misma logica de movimiento a la mano que queda en el array
-                    }
+                    
+                    raycaster.ray.at(distanciaAgarre, puntoInterseccion); //calcula el punto de intersección a la distancia que estaba agarrado el cubo para que no se mueva hacia la mano
+                    agarrado.position.copy(puntoInterseccion).add(offsetAgarre); //aplica el offset para que el cubo no se mueva hacia la mano
+                    agarrado.position.y = alturaFija; //fija la altura del cubo para que no se mueva en y
+                }
                 }
             }
-        });
+        );
 
         propiedadesMandos.push({
             espacio: controller,
@@ -112,7 +116,9 @@ export function interaction(renderer, scene, objective){
             raycaster.ray.origin.setFromMatrixPosition(mando.matrixWorld);
             raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
 
-            const intersecciones = raycaster.intersectObject(objective, true);
+            const hitbox = objective.getObjectByName('hitbox');
+            const objetivoColision = hitbox ? hitbox : objective;
+            const intersecciones = raycaster.intersectObject(objetivoColision, false);
 
             if (intersecciones.length > 0) {
                 laser.material.color.setHex(0x00cdf8); // Cambia el color del láser a azul celeste si hay colisión
@@ -127,12 +133,9 @@ export function interaction(renderer, scene, objective){
             raycaster.ray.origin.setFromMatrixPosition(mandos[0].matrixWorld);
             raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
 
-            if (raycaster.ray.intersectPlane(planoSuelo, puntoInterseccion)) {
-                
-                agarrado.position.copy(puntoInterseccion).add(offsetAgarre);
-                agarrado.position.y = alturaFija; 
-                
-            }
+            raycaster.ray.at(distanciaAgarre, puntoInterseccion); //calcula el punto de intersección a la distancia que estaba agarrado el cubo para que no se mueva hacia la mano
+            agarrado.position.copy(puntoInterseccion).add(offsetAgarre); //aplica el offset para que el cubo no se mueva hacia la mano
+            agarrado.position.y = alturaFija; //fija la altura del cubo para que no se mueva en y
         }
         // Lógica de rotación con dos mandos
         if (mandos.length === 2 && agarrado) {
@@ -151,23 +154,25 @@ export function interaction(renderer, scene, objective){
             distanciaActual = vecMano1.distanceTo(vecMano2);
             const escala = distanciaActual / distanciaAnterior;
 
-            if (distanciaAnterior > 0) {
+            if (distanciaAnterior > 0.001) {
                 //mide dónde están apoyados los pies AHORA MISMO
-                const cajaAntes = new THREE.Box3().setFromObject(agarrado);
+                cajaAntes.setFromObject(agarrado);
                 const nivelSuelo = cajaAntes.min.y;
 
                 //Aplica la escala
                 agarrado.scale.multiplyScalar(escala);
 
+                agarrado.updateMatrixWorld(true); //actualiza la matriz del objeto para que la escala se aplique correctamente
+
                 //Vuelve a medir la base, que ha cambiado al escalar desde el centro y se habra metido en el suelo
-                const cajaDespues = new THREE.Box3().setFromObject(agarrado);
+                cajaDespues.setFromObject(agarrado);
                 
                 //Levanta la figura exactamente lo que se haya hundido
                 agarrado.position.y += (nivelSuelo - cajaDespues.min.y);
+
+                agarrado.updateMatrixWorld(true); //actualiza la matriz del objeto para que la escala se aplique correctamente
                 
-                //Actualiza el plano invisible para el arrastre 2D
                 alturaFija = agarrado.position.y;
-                planoSuelo.constant = -alturaFija; //Mueve el plano de colisión a la nueva altura
             }
             distanciaAnterior = distanciaActual;
         }

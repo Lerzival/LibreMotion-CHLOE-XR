@@ -1,6 +1,6 @@
 import type { WebGLRenderer } from "three";
 
-let hitTestSource: XRHitTestSource;
+let hitTestSource: XRHitTestSource | null = null; //debe aceptar null para quitar hitTestSource
 let hitTestSourceRequested = false;
 
 export function handleXRHitTest(
@@ -15,14 +15,22 @@ export function handleXRHitTest(
   let xrHitPoseMatrix: Float32Array;
 
   if (session && hitTestSourceRequested === false) {
-    session.requestReferenceSpace("viewer").then((referenceSpace) => {
-      if (session) {
-        session
-          .requestHitTestSource?.({ space: referenceSpace })
-          ?.then((source) => {
-            hitTestSource = source;
-          });
-      }
+    session.requestReferenceSpace("viewer")
+        .then((referenceSpace) => {
+            if (session) {
+                session
+                    .requestHitTestSource?.({ space: referenceSpace })
+                    ?.then((source) => {
+                        hitTestSource = source;
+                    })
+                    .catch((err) => console.warn("HitTest source omitido")); //para intentar evitar hardlocks
+            }
+        })
+        .catch((err) => console.warn("ReferenceSpace omitido")); 
+
+    session.addEventListener('end', () => {
+        hitTestSourceRequested = false;
+        hitTestSource = null;
     });
 
     hitTestSourceRequested = true;

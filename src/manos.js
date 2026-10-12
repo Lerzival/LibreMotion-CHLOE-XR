@@ -17,8 +17,11 @@ for (let i = 0; i < hands.length; i++) {
                 const esfera = forma("cubo", 0.01, 0.01, 0.01, true);        
                 esfera.material.color.setHex(0x550000);
                 esfera.matrixAutoUpdate = false;
-        
-                hand.children[j].add(esfera);
+                if (hand.children[j]) {
+                    hand.children[j].add(esfera);
+                } else {
+                    console.warn(`No se encontró la articulación ${j} en la mano ${i}`);
+                }
             }
         }
     });
