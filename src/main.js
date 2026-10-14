@@ -260,17 +260,19 @@ function init() {
         scene.add(modelGroup); 
         modelGroup.visible = true;
 
-        const hitboxGeo = new THREE.BoxGeometry(1, 1, 1);
+        const hitboxGeo = new THREE.BoxGeometry(1.2, 2.0, 1.2);
         const hitboxMat = new THREE.MeshBasicMaterial({ 
             
             color: 0x0000ff, //DEBUG
             transparent: true, 
             opacity: 0.4, //DEBUG
             depthWrite: false,
-            wireframe: true //DE MOMENTO PROVISIONAL PERO QUIZAS FUNCIONA
+            wireframe: true, //DE MOMENTO PROVISIONAL PERO QUIZAS FUNCIONA
+            side: THREE.DoubleSide //para que sea interactuable en el caso de que te encuentres dentro del modelo
         });
         const hitbox = new THREE.Mesh(hitboxGeo, hitboxMat);
         hitbox.name = 'hitbox'; // Le damos un nombre para encontrarlo rápido
+        hitbox.position.set(0, 1.0, 0);
         modelGroup.add(hitbox);
 
         comprobarColisiones = interaction(renderer, scene, modelGroup);
@@ -548,25 +550,6 @@ function setupSceneFromData(data) {
         isPlaying = false;
         if (xr_button) xr_button.style.bottom = '30px'; //baja si no hay controles
         if (controlsContainer) controlsContainer.style.display = 'none';
-    }
-
-    //LOGICA DEL HITBOX
-
-    updateSceneToFrame(0); //posiciona el modelo en el frame 0 para que adquiera su forma real
-
-    const cajaVolumen = new THREE.Box3();
-    const centro = new THREE.Vector3();
-    const tamano = new THREE.Vector3();
-    cajaVolumen.setFromObject(modelGroup);
-    cajaVolumen.getCenter(centro);
-    cajaVolumen.getSize(tamano); //calcula el volumen total de todo lo que hay dentro del modelGroup
-
-    modelGroup.worldToLocal(centro); //convierte el centro global a coordenadas locales del modelGroup
-
-    const hitbox = modelGroup.getObjectByName('hitbox');
-    if (hitbox) {
-        hitbox.position.copy(centro);
-        hitbox.scale.copy(tamano).multiplyScalar(1.1); 
     }
 }
 
@@ -1492,6 +1475,15 @@ function updateSceneToFrame(index) {
     if (frameSlider && frameSlider.value != index) frameSlider.value = index;
     if (frameCounter) frameCounter.textContent = `${index} / ${animationData.length - 1}`;
     updateFrameButtons();
+
+    const hitbox = modelGroup.getObjectByName('hitbox');
+        if (hitbox && avatarBones.Hips) {
+            const hipsPos = new THREE.Vector3();
+            avatarBones.Hips.getWorldPosition(hipsPos); //coge la posición real de la cadera
+            modelGroup.worldToLocal(hipsPos); //pasa a coordenadas locales para que al mover el avatar no haya desfase
+    const alturaAnclada = hitbox.geometry.parameters.height / 2;
+    hitbox.position.set(hipsPos.x, alturaAnclada, hipsPos.z);
+}
 
 }
 
