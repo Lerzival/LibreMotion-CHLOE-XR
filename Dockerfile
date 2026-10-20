@@ -26,4 +26,4 @@ COPY --from=builder /app/dist ./dist/
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:$FLASK_PORT --workers $FLASK_WORKERS --timeout $FLASK_TIMEOUT app:app"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:$FLASK_PORT --workers $FLASK_WORKERS --worker-class gthread --threads 4 --timeout $FLASK_TIMEOUT app:app"]
