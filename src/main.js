@@ -457,6 +457,8 @@ async function handleFileSelect(filename) {
         console.error('Error:', error);
         // localized error message in the status bar 
         setStatus(t('app.error', { message: error.message }), 'error');
+    } finally {
+        isProcessing = false; //desbloqueo el archivo para poder ver otro
     }
 }
 
